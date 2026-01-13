@@ -1,0 +1,58 @@
+name: Dependabot auto-approve + auto-merge patch updates
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+  pull-requests: read
+
+concurrency:
+  group: dependabot-automerge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  patch_automerge:
+    if: >
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Fetch Dependabot metadata
+        id: meta
+        uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a # v2.5.0
+
+      - name: Stop if not a patch update
+        if: steps.meta.outputs.update-type != 'version-update:semver-patch'
+        run: |
+          echo "Not a patch update (${{
+            steps.meta.outputs.update-type
+          }}). Skipping."
+          exit 0
+
+      - name: Add automerge label
+        run: gh pr edit "$PR_URL" --add-label "automerge"
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+
+      - name: Auto-approve
+        # Use PAT because GITHUB_TOKEN approvals are often blocked
+        run: gh pr review "$PR_URL" --approve -b "Auto-approving Dependabot patch update."
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDABOT_AUTOMERGE_PAT }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
+
+      - name: Enable auto-merge
+        # Use the same PAT for consistency (recommended)
+        run: gh pr merge "$PR_URL" --auto --squash
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDABOT_AUTOMERGE_PAT }}
+          PR_URL: ${{ github.event.pull_request.html_url }}
