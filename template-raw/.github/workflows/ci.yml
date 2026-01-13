@@ -1,0 +1,67 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 #v6.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Detect Java version from Maven POM
+        id: java
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          RAW=$(mvn -q -N -DforceStdout help:evaluate -Dexpression=maven.compiler.target 2>/dev/null \
+            | tr -d '\r' \
+            | awk 'NF{last=$0} END{print last}')
+
+          MAJOR="${RAW%%.*}"
+
+          if [[ ! "$MAJOR" =~ ^[0-9]+$ ]]; then
+            echo "Could not determine Java version from maven.compiler.target (got '$RAW')" >&2
+            exit 1
+          fi
+
+          echo "Detected Java version from maven.compiler.target: $MAJOR"
+          echo "version=$MAJOR" >> "$GITHUB_OUTPUT"
+
+      - name: Set up JDK
+        uses: actions/setup-java@f2beeb24e141e01a676f977032f5a29d81c9e27e # v5.1.0
+        with:
+          distribution: temurin
+          java-version: ${{ steps.java.outputs.version }}
+          cache: maven
+
+      - name: Build & test (always)
+        run: mvn -B -Pci clean verify
+
+      - name: Cache SonarCloud packages
+        if: ${{ env.SONAR_TOKEN }}
+        uses: actions/cache@9255dc7a253b0ccc959486e2bca901246202afeb # v5.0.1
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: SonarCloud analysis (only when token available)
+        if: ${{ env.SONAR_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+        run: |
+          mvn -B -Pci \
+            org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
+            -Dsonar.projectKey=voomdoon_vd-testing-file
