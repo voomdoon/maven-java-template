@@ -109,7 +109,7 @@ done
 # - - - - - template files - - - - -
 
 # + + + + + cleanup + + + + +
-rm $MODULE_PATH/.github/workflows/maven.yml
+rm --force $MODULE_PATH/.github/workflows/maven.yml
 # - - - - - cleanup - - - - -
 
 # + + + + + commit + + + + +
