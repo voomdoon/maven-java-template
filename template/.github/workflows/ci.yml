@@ -64,4 +64,4 @@ jobs:
         run: |
           mvn -B -Pci \
             org.sonarsource.scanner.maven:sonar-maven-plugin:sonar \
-            -Dsonar.projectKey=voomdoon_vd-testing-file
+            -Dsonar.projectKey=voomdoon_TEMPLATE_NAME
