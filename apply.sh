@@ -15,6 +15,8 @@ if [ -z "$MODULE_PATH" ]; then
 fi
 # - - - - - input - - - - -
 
+echo processing $MODULE_PATH ...
+
 # + + + + + git sanity checks + + + + +
 
 if [ ! -d "$MODULE_PATH/.git" ]; then
@@ -89,8 +91,7 @@ if [ ! -f "$POM_FILE" ]; then
   exit 3
 fi
 
-# Extract <artifactId> from pom.xml
-MODULE_NAME=$(grep -m1 '<artifactId>' "$POM_FILE" | sed 's/.*<artifactId>\(.*\)<\/artifactId>.*/\1/')
+MODULE_NAME="$(cd "$MODULE_PATH" && mvn -q -N -DforceStdout help:evaluate -Dexpression=project.artifactId 2>/dev/null | tr -d '\r' | awk 'NF{last=$0} END{print last}')"
 if [ -z "$MODULE_NAME" ]; then
   echo "Error: Could not extract <artifactId> from pom.xml"
   exit 4
