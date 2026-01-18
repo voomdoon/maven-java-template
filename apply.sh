@@ -15,7 +15,7 @@ if [ -z "$MODULE_PATH" ]; then
 fi
 # - - - - - input - - - - -
 
-echo ▶️ $MODULE_PATH ...
+echo ⏩ $MODULE_PATH ...
 
 # + + + + + git sanity checks + + + + +
 
