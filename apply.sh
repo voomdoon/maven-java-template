@@ -15,34 +15,34 @@ if [ -z "$MODULE_PATH" ]; then
 fi
 # - - - - - input - - - - -
 
-echo processing $MODULE_PATH ...
+echo ▶️ $MODULE_PATH ...
 
 # + + + + + git sanity checks + + + + +
 
 if [ ! -d "$MODULE_PATH/.git" ]; then
-  echo "Error: $MODULE_PATH is not a git repository"
-  exit 10
+  echo "❌ $MODULE_PATH : not a git repository"
+  exit 1
 fi
 
 cd "$MODULE_PATH"
 
 # Ensure we are on a branch (not detached HEAD)
 if ! git symbolic-ref --quiet HEAD >/dev/null; then
-  echo "Error: git repository is in detached HEAD state"
-  exit 11
+  echo "❌ $MODULE_PATH : git repository is in detached HEAD state"
+  exit 1
 fi
 
 # Ensure working tree is clean
 if [ -n "$(git status --porcelain)" ]; then
-  echo "Error: git working tree is not clean"
+  echo "❌ $MODULE_PATH : git working tree is not clean"
   git status --short
-  exit 12
+  exit 1
 fi
 
 # Ensure we have an upstream configured
 if ! git rev-parse --abbrev-ref --symbolic-full-name @{u} >/dev/null 2>&1; then
-  echo "Error: current branch has no upstream configured"
-  exit 13
+  echo "❌ $MODULE_PATH : current branch has no upstream configured"
+  exit 1
 fi
 
 # Fetch and check if branch is up to date
@@ -54,14 +54,14 @@ BASE="$(git merge-base @ @{u})"
 
 if [ "$LOCAL" != "$REMOTE" ]; then
   if [ "$LOCAL" = "$BASE" ]; then
-    echo "Error: local branch is behind remote (pull first)"
-    exit 14
+    echo "❌ $MODULE_PATH : local branch is behind remote (pull first)"
+    exit 1
   elif [ "$REMOTE" = "$BASE" ]; then
-    echo "Error: local branch is ahead of remote (push first)"
-    exit 15
+    echo "❌ $MODULE_PATH : local branch is ahead of remote (push first)"
+    exit 1
   else
-    echo "Error: local and remote branches have diverged"
-    exit 16
+    echo "❌ $MODULE_PATH : local and remote branches have diverged"
+    exit 1
   fi
 fi
 
@@ -75,8 +75,8 @@ cd - >/dev/null
 # + + + + + raw files + + + + +
 
 if [ ! -d "$TEMPLATE_RAW_DIR" ]; then
-  echo "Error: template-raw directory not found at $TEMPLATE_RAW_DIR"
-  exit 2
+  echo "❌ $MODULE_PATH : template-raw directory not found at $TEMPLATE_RAW_DIR"
+  exit 1
 fi
 
 # Copy all files and directories, including hidden ones, from template-raw to the module path
@@ -87,14 +87,14 @@ cp -rf "$TEMPLATE_RAW_DIR"/. "$MODULE_PATH"/
 # + + + + + template files + + + + +
 POM_FILE="$MODULE_PATH/pom.xml"
 if [ ! -f "$POM_FILE" ]; then
-  echo "Error: pom.xml not found in $MODULE_PATH"
-  exit 3
+  echo "❌ $MODULE_PATH : pom.xml not found in $MODULE_PATH"
+  exit 1
 fi
 
 MODULE_NAME="$(cd "$MODULE_PATH" && mvn -q -N -DforceStdout help:evaluate -Dexpression=project.artifactId 2>/dev/null | tr -d '\r' | awk 'NF{last=$0} END{print last}')"
 if [ -z "$MODULE_NAME" ]; then
-  echo "Error: Could not extract <artifactId> from pom.xml"
-  exit 4
+  echo "❌ $MODULE_PATH : Could not extract <artifactId> from pom.xml"
+  exit 1
 fi
 
 echo "Module name (artifactId) detected: $MODULE_NAME"
@@ -116,7 +116,12 @@ rm --force $MODULE_PATH/.github/workflows/maven.yml
 # + + + + + commit + + + + +
 cd "$MODULE_PATH"
 git add .
-git commit -m "build: apply maven-java-template"
+
+if git diff --cached --quiet; then
+  echo "ℹ️ $MODULE_PATH : nothing changed"
+else
+  git commit -m "build: apply maven-java-template"
+fi
 # - - - - - commit - - - - -
 
-echo "Template applied to $MODULE_PATH"
+echo "✅ $MODULE_PATH"
