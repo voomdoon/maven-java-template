@@ -62,11 +62,11 @@ jobs:
 
       - name: Stop if not a patch update
         if: steps.meta.outputs.update-type != 'version-update:semver-patch'
-		run: |
-		  echo "Not a patch update (${{
-		    steps.meta.outputs.update-type
-		  }}). Skipping."
-		  exit 0
+        run: |
+          echo "Not a patch update (${{
+            steps.meta.outputs.update-type
+          }}). Skipping."
+          exit 0
 
       - name: Ensure automerge label exists
         env:
