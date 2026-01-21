@@ -37,6 +37,15 @@ jobs:
           }}). Skipping."
           exit 0
 
+	  - name: Ensure automerge label exists
+	    env:
+	      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+	    run: |
+	      gh label create automerge \
+	        --description "PRs eligible for automatic merge" \
+	        --color "B55BAF" \
+	        || echo "Label 'automerge' already exists"
+
       - name: Add automerge label
         run: gh pr edit "$PR_URL" --add-label "automerge"
         env:
