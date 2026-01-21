@@ -3,7 +3,7 @@
 
 ## Prerequisites on the GitHub repository
 
-- set action secret `SONAR_TOKEN`
+- set action repository secret `SONAR_TOKEN`
 - set Dependabot secret `DEPENDABOT_AUTOMERGE_PAT`
 - add branch classic protection rule for `main`
 	- Require a pull request before merging
