@@ -1,19 +1,10 @@
 version: 2
 updates:
-  - package-ecosystem: "maven"
-    directory: "/"
-    schedule:
-      interval: "daily"
-
   - package-ecosystem: "github-actions"
-    directory: "/"
+    directory: "/template/.github/workflows"
     schedule:
       interval: "daily"
   - package-ecosystem: "github-actions"
-    directory: "/template"
-    schedule:
-      interval: "daily"
-  - package-ecosystem: "github-actions"
-    directory: "/template-raw"
+    directory: "/template-raw/.github/workflows"
     schedule:
       interval: "daily"
