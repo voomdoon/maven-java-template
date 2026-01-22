@@ -97,8 +97,6 @@ if [ -z "$MODULE_NAME" ]; then
   exit 1
 fi
 
-echo "Module name (artifactId) detected: $MODULE_NAME"
-
 cp -rf "$TEMPLATE_DIR"/. "$MODULE_PATH"/
 
 find "$MODULE_PATH" -type f -print0 | while IFS= read -r -d '' file; do
@@ -118,10 +116,11 @@ cd "$MODULE_PATH"
 git add .
 
 if git diff --cached --quiet; then
-  echo "ℹ️ $MODULE_PATH : nothing changed"
+  echo "✅ $MODULE_PATH"
 else
   git commit -m "build: apply maven-java-template"
+  echo "⚠️ $MODULE_PATH : changes committed => push required"
 fi
 # - - - - - commit - - - - -
 
-echo "✅ $MODULE_PATH"
+echo
