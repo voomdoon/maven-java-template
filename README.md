@@ -1,7 +1,7 @@
 # maven-java-template
 
 
-## Prerequisites on the GitHub repository
+## Prerequisites on the target GitHub repository
 
 - set action repository secret `SONAR_TOKEN`
 - set Dependabot secret `DEPENDABOT_AUTOMERGE_PAT`
