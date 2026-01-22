@@ -91,18 +91,25 @@ if [ ! -f "$POM_FILE" ]; then
   exit 1
 fi
 
-MODULE_NAME="$(cd "$MODULE_PATH" && mvn -q -N -DforceStdout help:evaluate -Dexpression=project.artifactId 2>/dev/null | tr -d '\r' | awk 'NF{last=$0} END{print last}')"
-if [ -z "$MODULE_NAME" ]; then
-  echo "❌ $MODULE_PATH : Could not extract <artifactId> from pom.xml"
+MODULE_NAME="$(cd "$MODULE_PATH" && mvn -q -N -DforceStdout help:evaluate -Dexpression=project.artifactId 2>&1 | tr -d '\r' | awk 'NF{last=$0} END{print last}')"
+
+# Check for Maven error output
+if [[ -z "$MODULE_NAME" || "$MODULE_NAME" == *"[ERROR]"* ]]; then
+  echo "❌ $MODULE_PATH : Could not extract <artifactId> from pom.xml (Maven error: $MODULE_NAME)"
   exit 1
 fi
+
+echo "Module name: $MODULE_NAME"
+
+# Escape special characters for sed (|, &, \)
+ESCAPED_MODULE_NAME=$(printf '%s' "$MODULE_NAME" | sed -e 's/[|&\\]/\\&/g')
 
 cp -rf "$TEMPLATE_DIR"/. "$MODULE_PATH"/
 
 find "$MODULE_PATH" -type f -print0 | while IFS= read -r -d '' file; do
   # Skip binary files
   if grep -Iq . "$file"; then
-    sed -i "s/TEMPLATE_NAME/$MODULE_NAME/g" "$file"
+    sed -i "s|TEMPLATE_NAME|$ESCAPED_MODULE_NAME|g" "$file"
   fi
 done
 # - - - - - template files - - - - -
