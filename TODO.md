@@ -1,0 +1,3 @@
+- codeql
+- dependabot-automerge-patch
+	- enable auto merge for all versions
