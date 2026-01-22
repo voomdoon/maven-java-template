@@ -1,91 +1,47 @@
 name: Dependabot auto-approve + auto-merge patch updates
 
 on:
-  workflow_run:
-    workflows: ["CI"]
-    types:
-      - completed
+  pull_request:
 
 permissions:
-  contents: read
-  pull-requests: read
+  contents: write
+  pull-requests: write
 
 concurrency:
-  group: dependabot-automerge-${{ github.event.workflow_run.pull_requests[0].number || github.event.workflow_run.id }}
+  group: dependabot-automerge-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 jobs:
-  patch_automerge:
+  automerge:
     if: >
-      github.event.workflow_run.conclusion == 'success'
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
 
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-
     steps:
-      - name: Download PR metadata
-        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8.0.0
-        id: pr-metadata
-        with:
-          script: |
-            const pr = await github.rest.pulls.get({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.workflow_run.pull_requests[0].number
-            });
-            core.setOutput('pr_user', pr.data.user.login);
-            core.setOutput('pr_draft', pr.data.draft);
-            core.setOutput('pr_url', pr.data.html_url);
-            core.setOutput('pr_number', pr.data.number);
-
-      - name: Check Dependabot and patch update
-        id: check-dependabot
+      - name: Check for DEPENDABOT_AUTOMERGE_PAT secret
         run: |
-          if [ "${{ steps.pr-metadata.outputs.pr_user }}" != "dependabot[bot]" ]; then
-            echo "Not a dependabot PR. Exiting." && exit 0
-          fi
-          if [ "${{ steps.pr-metadata.outputs.pr_draft }}" = "true" ]; then
-            echo "PR is a draft. Exiting." && exit 0
+          if [ -z "${{ secrets.DEPENDABOT_AUTOMERGE_PAT }}" ]; then
+            echo "Error: DEPENDABOT_AUTOMERGE_PAT secret is not set. Exiting." >&2
+            exit 1
           fi
 
-      - name: Checkout repository
-        uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
-
-      - name: Fetch Dependabot metadata
-        id: meta
-        uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a # v2.5.0
+      - id: meta
+        uses: dependabot/fetch-metadata@v2
         with:
-          pr: ${{ steps.pr-metadata.outputs.pr_number }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Stop if not a patch update
-        if: steps.meta.outputs.update-type != 'version-update:semver-patch'
+      - name: Approve (patch only)
+        if: steps.meta.outputs.update-type == 'version-update:semver-patch'
         run: |
-          echo "Not a patch update (${steps.meta.outputs.update-type}). Skipping."
-          exit 0
-
-      - name: Ensure automerge label exists
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh label create automerge \
-            --description "PRs eligible for automatic merge" \
-            --color "b55baf" \
-            || echo "Label 'automerge' already exists"
-
-      - name: Add automerge label
-        run: gh pr edit "${{ steps.pr-metadata.outputs.pr_url }}" --add-label "automerge"
-        env:
-          GH_TOKEN: ${{ github.token }}
-
-      - name: Auto-approve
-        run: gh pr review "${{ steps.pr-metadata.outputs.pr_url }}" --approve -b "Auto-approving Dependabot patch update."
+          gh pr review "${{ github.event.pull_request.html_url }}" --approve -b "Auto-approving Dependabot patch update." || { echo "Error: Failed to approve PR." >&2; exit 1; }
         env:
           GH_TOKEN: ${{ secrets.DEPENDABOT_AUTOMERGE_PAT }}
 
-      - name: Enable auto-merge
-        run: gh pr merge "${{ steps.pr-metadata.outputs.pr_url }}" --auto --squash
+      - name: Enable auto-merge (patch only)
+        if: steps.meta.outputs.update-type == 'version-update:semver-patch'
+        run: |
+          gh pr merge --auto --squash "${{ github.event.pull_request.html_url }}" || { echo "Error: Failed to enable auto-merge." >&2; exit 1; }
         env:
           GH_TOKEN: ${{ secrets.DEPENDABOT_AUTOMERGE_PAT }}
