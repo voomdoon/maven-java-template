@@ -37,9 +37,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8 # v6.0.1
 
+      - name: Detect Java sources
+        id: detect
+        shell: bash
+        run: |
+          if git ls-files -- '**/*.java' | grep -q .; then
+            echo "has_java=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_java=false" >> "$GITHUB_OUTPUT"
+          fi
+
       # Only needed for Java/Kotlin
       - name: Set up JDK 21
-        if: matrix.language == 'java-kotlin'
+        if: >
+          matrix.language == 'java-kotlin' &&
+          steps.detect.outputs.has_java == 'true'
         uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654 # v5.2.0
         with:
           distribution: temurin
@@ -47,6 +59,9 @@ jobs:
           cache: maven
 
       - name: Initialize CodeQL
+        if: >
+          matrix.language != 'java-kotlin' ||
+          steps.detect.outputs.has_java == 'true'
         uses: github/codeql-action/init@cdefb33c0f6224e58673d9004f47f7cb3e328b89 # v4.31.10
         with:
           languages: ${{ matrix.language }}
@@ -54,10 +69,15 @@ jobs:
 
       # Manual build for Java/Kotlin so CodeQL can extract + compile with Java 21
       - name: Build with Maven
-        if: matrix.language == 'java-kotlin'
+        if: >
+          matrix.language == 'java-kotlin' &&
+          steps.detect.outputs.has_java == 'true'
         run: mvn -B -DskipTests package
 
       - name: Perform CodeQL Analysis
+        if: >
+          matrix.language == 'java-kotlin' ||
+          steps.detect.outputs.has_java == 'true'
         uses: github/codeql-action/analyze@cdefb33c0f6224e58673d9004f47f7cb3e328b89 # v4.31.10
         with:
           category: "/language:${{ matrix.language }}"
