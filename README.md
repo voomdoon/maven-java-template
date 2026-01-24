@@ -5,6 +5,11 @@
 
 - set action repository secret `SONAR_TOKEN`
 - set Dependabot secret `DEPENDABOT_AUTOMERGE_PAT`
+	- Fine-grained personal access token
+		- Contents: R+W
+		- Metadata: RO
+		- Pull requests: R+W
+		- Workflows: R+W
 - add branch classic protection rule for `main`
 	- Require a pull request before merging
 		- check all
