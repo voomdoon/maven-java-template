@@ -1,0 +1,77 @@
+name: Dependabot auto-merge
+
+on:
+  pull_request:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: dependabot-automerge-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  check_setup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check for DEPENDABOT_AUTOMERGE_PAT secret
+        run: |
+          if [ -z "${{ secrets.DEPENDABOT_AUTOMERGE_PAT }}" ]; then
+            echo "Error: DEPENDABOT_AUTOMERGE_PAT secret is not set. Exiting." >&2
+            exit 1
+          fi
+
+  approve:
+    needs: check_setup
+    if: >
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      github.event.pull_request.draft == false &&
+      github.event.pull_request.base.ref == 'main'
+    runs-on: ubuntu-latest
+    outputs:
+      should_automerge: ${{ steps.policy.outputs.should_automerge }}
+
+    steps:
+      - id: meta
+        name: Fetch metadata 
+        uses: dependabot/fetch-metadata@v2
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - id: policy
+        name: Decide auto-merge policy
+        run: |
+          SHOULD="false"
+
+          UPDATE_TYPE="${{ steps.meta.outputs.update-type }}"
+          ECO="${{ steps.meta.outputs.package-ecosystem }}"
+
+          # allow: any patch
+          if [ "$UPDATE_TYPE" = "version-update:semver-patch" ]; then
+            SHOULD="true"
+          fi
+
+          # allow: github-actions minor (and patch already covered above)
+          if [ "$ECO" = "github_actions" ] && [ "$UPDATE_TYPE" = "version-update:semver-minor" ]; then
+            SHOULD="true"
+          fi
+
+          echo "should_automerge=$SHOULD" >> "$GITHUB_OUTPUT"
+
+      - name: Approve Dependabot PR
+        if: steps.policy.outputs.should_automerge == 'true'
+        run: gh pr review "${{ github.event.pull_request.html_url }}" --approve -b "Auto-approving Dependabot update."
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDABOT_AUTOMERGE_PAT }}
+
+  automerge:
+    needs: approve
+    if: needs.approve.outputs.should_automerge == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Enable auto-merge
+        run: |
+          gh pr merge --auto --squash "${{ github.event.pull_request.html_url }}" || { echo "Error: Failed to enable auto-merge." >&2; exit 1; }
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDABOT_AUTOMERGE_PAT }}
