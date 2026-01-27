@@ -11,7 +11,7 @@ permissions:
   pull-requests: read
 
 jobs:
-  build:
+  verify:
     runs-on: ubuntu-latest
 
     env:
@@ -49,7 +49,7 @@ jobs:
           java-version: ${{ steps.java.outputs.version }}
           cache: maven
 
-      - name: Build & test (always)
+      - name: Maven Verify
         run: mvn -B -Pci clean verify
 
       - name: Cache SonarCloud packages
