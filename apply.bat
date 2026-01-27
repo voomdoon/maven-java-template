@@ -174,6 +174,9 @@ IF NOT "%RC%"=="0" EXIT /B %RC%
 :: + + + + + cleanup + + + + +
 REM Remove .github/workflows/maven.yml
 IF EXIST "%MODULE_PATH%\.github\workflows\maven.yml" DEL /F /Q "%MODULE_PATH%\.github\workflows\maven.yml"
+
+REM Remove .github/workflows/dependabot-automerge-patch.yml
+IF EXIST "%MODULE_PATH%\.github\workflows\dependabot-automerge-patch.yml" DEL /F /Q "%MODULE_PATH%\.github\workflows\dependabot-automerge-patch.yml"
 :: - - - - - cleanup - - - - -
 
 :: + + + + + commit + + + + +
