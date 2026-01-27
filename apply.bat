@@ -186,7 +186,8 @@ git add .
 git diff --cached --quiet
 IF ERRORLEVEL 1 (
 	git commit -m "build: apply maven-java-template"
-	ECHO ! %MODULE_PATH% : changes committed =^> push required
+	git push
+	ECHO OK %MODULE_PATH% : updated
 ) ELSE (
 	ECHO OK %MODULE_PATH%
 )
