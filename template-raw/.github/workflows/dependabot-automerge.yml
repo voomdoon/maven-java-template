@@ -21,6 +21,44 @@ jobs:
             echo "Error: DEPENDABOT_AUTOMERGE_PAT secret is not set. Exiting." >&2
             exit 1
           fi
+      - name: "Guard: ensure branch protection requires CI check"
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDABOT_AUTOMERGE_PAT }}
+          EXPECTED_CHECK: verify
+          PROTECTED_BRANCH: main
+        run: |
+          set -euo pipefail
+      
+          api="repos/${GITHUB_REPOSITORY}/branches/${PROTECTED_BRANCH}/protection/required_status_checks"
+          echo "Checking required status checks via: $api"
+      
+          # capture status code
+          out="$(mktemp)"
+          code="$(gh api -H "Accept: application/vnd.github+json" "$api" >"$out" 2>/dev/null; echo $?)"
+      
+          if [ "$code" -ne 0 ]; then
+            echo "ERROR: Cannot read branch protection required status checks." >&2
+            echo "Likely causes:" >&2
+            echo " - PAT lacks fine-grained permission: Administration (read-only)" >&2
+            echo " - Token owner is not repo admin" >&2
+            exit 1
+          fi
+      
+          contexts="$(jq -r '.contexts[]?' <"$out")"
+      
+          if [ -z "$contexts" ]; then
+            echo "ERROR: No required status checks configured on ${PROTECTED_BRANCH}." >&2
+            exit 1
+          fi
+      
+          if ! echo "$contexts" | grep -Fxq "$EXPECTED_CHECK"; then
+            echo "ERROR: Required checks do NOT include '${EXPECTED_CHECK}'." >&2
+            echo "Required checks are:" >&2
+            echo "$contexts" | sed 's/^/ - /'
+            exit 1
+          fi
+
+          echo "OK: Branch protection requires '${EXPECTED_CHECK}'."
 
   approve:
     needs: check_setup
