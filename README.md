@@ -13,11 +13,13 @@
 		- Workflows: R+W
 - add branch classic protection rule for `main`
 	- Require a pull request before merging
-		- add `verify` and `CodeQL` 
+		- check all
 	- Require status checks to pass before merging
 		- Require branches to be up to date before merging
 	- Require conversation resolution before merging
 	- Require linear history
+	- Require status checks to pass before merging
+		- add `verify` and `CodeQL`
 - enable `Allow auto-merge`
 
 
