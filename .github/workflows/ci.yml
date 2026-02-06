@@ -17,18 +17,25 @@ jobs:
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
 
-      # Lint GitHub Actions workflows (both the template repo workflows AND the workflows inside /template)
       - name: Lint GitHub Actions workflows (actionlint)
         uses: rhysd/actionlint@0933c147c9d6587653d45fdcb4c497c57a65f9af # v1.7.10
         with:
-          # Include workflows in:
-          # - .github/workflows (this repo)
-          # - template/.github/workflows (the scaffolding content)
-          args: >-
+          args: |
             -color
-            -glob=.github/workflows/*.yml
-            -glob=template/.github/workflows/*.yml
-            -glob=template-raw/.github/workflows/*.yml
+
+      - name: Lint template/.github/workflows (actionlint)
+        uses: rhysd/actionlint@0933c147c9d6587653d45fdcb4c497c57a65f9af # v1.7.10
+        with:
+          args: |
+            -color
+            -dir=template/.github/workflows
+
+      - name: Lint template-raw/.github/workflows (actionlint)
+        uses: rhysd/actionlint@0933c147c9d6587653d45fdcb4c497c57a65f9af # v1.7.10
+        with:
+          args: |
+            -color
+            -dir=template-raw/.github/workflows
 
       # Generic YAML linting (dependabot.yml, workflows, etc.)
       - name: Lint YAML files (yamllint)
