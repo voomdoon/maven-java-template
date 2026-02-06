@@ -53,7 +53,7 @@ jobs:
           if ! echo "$contexts" | grep -Fxq "$EXPECTED_CHECK"; then
             echo "ERROR: Required checks do NOT include '${EXPECTED_CHECK}'." >&2
             echo "Required checks are:" >&2
-            echo "$contexts" | sed 's/^/ - /'
+            while IFS= read -r line; do echo " - $line"; done <<< "$contexts"
             exit 1
           fi
 
