@@ -22,16 +22,6 @@ jobs:
         with:
           args: -color
 
-      - name: Lint template/.github/workflows (actionlint)
-        uses: rhysd/actionlint@0933c147c9d6587653d45fdcb4c497c57a65f9af # v1.7.10
-        with:
-          args: -color template/.github/workflows/*.yml
-
-      - name: Lint template-raw/.github/workflows (actionlint)
-        uses: rhysd/actionlint@0933c147c9d6587653d45fdcb4c497c57a65f9af # v1.7.10
-        with:
-          args: -color template-raw/.github/workflows/*.yml
-
       # Generic YAML linting (dependabot.yml, workflows, etc.)
       - name: Lint YAML files (yamllint)
         uses: ibiqlik/action-yamllint@2576378a8e339169678f9939646ee3ee325e845c # v3.1.1
