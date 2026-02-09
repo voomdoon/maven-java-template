@@ -7,6 +7,10 @@ setlocal enabledelayedexpansion
 :: XXX preparation:
 :: git config --local core.sshCommand "ssh -i C:/Users/andrschulz/.ssh/voomdoon/id_voomdoon_2022-03-27 -o IdentitiesOnly=yes"
 
+ECHO !!! you need to manually set the JavaDoc incption version of all members
+ECHO !!! remember to set the corret version, e.g. convert to minor version, if code has patch version set
+PAUSE
+
 git fetch origin || GOTO error
 
 FOR /f %%i IN ('git rev-parse --abbrev-ref HEAD') DO SET BRANCH=%%i
