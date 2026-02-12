@@ -26,3 +26,18 @@
 ## Apply the template
 
 - TODO
+
+
+## Common errors
+
+### dependabot-automerge
+
+#### ERROR: Cannot read branch protection required status checks.
+
+- `DEPENDABOT_AUTOMERGE_PAT` missing
+- `DEPENDABOT_AUTOMERGE_PAT` incorrect (maybe copy-paste mistake)
+- no required check configured
+
+#### ERROR: Required checks do NOT include 'verify'.
+
+- `verify` is missing at the required status checks
