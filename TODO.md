@@ -1,3 +1,13 @@
 - codeql
-- dependabot-automerge-patch
+- dependabot-automerge
 	- enable auto merge for all versions
+	- can we check the actions for check gates?
+- batch
+	- apply
+	- apply-to-all
+- bug: need to use temp file to replace TEMPLATE_NAME
+- Sonar
+- release
+	- pin inception version
+	- GH release
+- add actionlint to template
