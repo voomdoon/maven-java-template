@@ -25,6 +25,7 @@ ECHO HINT: you need to manually set the JavaDoc inception version of all members
 ECHO HINT: remember to set the corret version, e.g. convert to minor version, if code has patch version set
 PAUSE
 
+:: + + + + + + + + + + check GIT + + + + + + + + + +
 :: + + + + + check GIT status + + + + +
 CALL :log_action "checking remote state (git fetch)"
 git fetch origin || GOTO error
@@ -56,7 +57,7 @@ CALL :log_action "checking for rebase/merge/cherry-pick in progress"
 IF EXIST ".git\REBASE_HEAD" (ECHO ERROR: rebase in progress & GOTO error)
 IF EXIST ".git\MERGE_HEAD"  (ECHO ERROR: merge in progress & GOTO error)
 IF EXIST ".git\CHERRY_PICK_HEAD" (ECHO ERROR: cherry-pick in progress & GOTO error)
-:: - - - - - - check GIT status - - - - -
+:: - - - - - check GIT status - - - - -
 :: + + + + + check GIT remote + + + + +
 CALL :log_action "reading git remote origin URL"
 FOR /f "delims=" %%u IN ('git remote get-url origin') DO SET "ORIGIN_URL=%%u"
@@ -73,7 +74,8 @@ IF NOT DEFINED ORIGIN_OK (
   ECHO WARNING: origin does not contain expected owner "voomdoon"
   ECHO WARNING: continuing anyway (sync check vs origin/main will still protect you)
 )
-:: - - - - check GIT remote - - - - -
+:: - - - - - check GIT remote - - - - -
+:: - - - - - - - - - - check GIT - - - - - - - - - -
 
 CALL :log_action "checking GPG signing"
 ECHO test | gpg --clearsign >nul 2>&1 || (ECHO ERROR: GPG signing failed & GOTO error)
