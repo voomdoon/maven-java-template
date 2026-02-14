@@ -18,6 +18,33 @@ SET TEMPLATE_DIR=%SCRIPT_DIR%template
 SET CURRENTDIR=%CD%
 :: - - - - - input - - - - -
 
+ECHO ===== Applying maven-java-template to %MODULE_PATH% =====
+
+:: + + + + + extract artifactId + + + + +
+SET "MODULE_NAME="
+
+FOR /F "usebackq delims=" %%A IN (`
+  mvn -q -N -f "%MODULE_PATH%\pom.xml" -DforceStdout help:evaluate "-Dexpression=project.artifactId" 2^>^&1
+`) DO (
+  IF NOT "%%A"=="" SET "MODULE_NAME=%%A"
+)
+
+REM Validate result
+IF NOT DEFINED MODULE_NAME (
+  ECHO !!! %MODULE_PATH% : Could not extract ^<artifactId^> from pom.xml ^(empty result^)
+  EXIT /B 1
+)
+
+REM If the last line is an error, fail
+ECHO(!MODULE_NAME!| findstr /B /C:"[ERROR]" >nul
+IF %ERRORLEVEL% EQU 0 (
+  ECHO !!! %MODULE_PATH% : Could not extract ^<artifactId^> from pom.xml ^(Maven error: !MODULE_NAME!^)
+  EXIT /B 1
+)
+
+ECHO Module name: !MODULE_NAME!
+:: - - - - - extract artifactId - - - - -
+
 :: + + + + + git sanity checks + + + + +
 REM Git sanity checks
 IF NOT EXIST "%MODULE_PATH%\.git" (
@@ -89,31 +116,6 @@ IF NOT EXIST "%MODULE_PATH%\pom.xml" (
 	ECHO !!! %MODULE_PATH% : pom.xml not found in %MODULE_PATH%
 	EXIT /B 1
 )
-
-:: + + + + + extract artifactId + + + + +
-SET "MODULE_NAME="
-
-FOR /F "usebackq delims=" %%A IN (`
-  mvn -q -N -f "%MODULE_PATH%\pom.xml" -DforceStdout help:evaluate "-Dexpression=project.artifactId" 2^>^&1
-`) DO (
-  IF NOT "%%A"=="" SET "MODULE_NAME=%%A"
-)
-
-REM Validate result
-IF NOT DEFINED MODULE_NAME (
-  ECHO !!! %MODULE_PATH% : Could not extract ^<artifactId^> from pom.xml ^(empty result^)
-  EXIT /B 1
-)
-
-REM If the last line is an error, fail
-ECHO(!MODULE_NAME!| findstr /B /C:"[ERROR]" >nul
-IF %ERRORLEVEL% EQU 0 (
-  ECHO !!! %MODULE_PATH% : Could not extract ^<artifactId^> from pom.xml ^(Maven error: !MODULE_NAME!^)
-  EXIT /B 1
-)
-
-ECHO Module name: !MODULE_NAME!
-:: - - - - - extract artifactId - - - - -
 
 :: + + + + + template files + + + + +
 SET "TMP_DIR=%TEMP%\maven-java-template-%RANDOM%%RANDOM%"
