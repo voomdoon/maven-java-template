@@ -18,9 +18,6 @@ FOR %%A IN (%*) DO (
 :: FEATURE update dependency version at README
 :: FEATURE mvn javadoc:javadoc
 
-ECHO dry run: %DRY%
-ECHO verbose: %VERBOSE%
-
 ECHO HINT: you need to manually set the JavaDoc inception version of all members
 ECHO HINT: remember to set the corret version, e.g. convert to minor version, if code has patch version set
 PAUSE
@@ -76,6 +73,18 @@ IF NOT DEFINED ORIGIN_OK (
 )
 :: - - - - - check GIT remote - - - - -
 :: - - - - - - - - - - check GIT - - - - - - - - - -
+
+CALL :log_action "preflight build"
+CALL mvn -B -ntp clean verify || GOTO error
+
+CALL :log_action "checking for external SNAPSHOT dependencies (excluding reactor)"
+CALL mvn -B -ntp -DskipTests -DexcludeReactor=true dependency:list ^
+  | findstr /i ":SNAPSHOT" >nul && (
+    ECHO ERROR: external SNAPSHOT dependency detected
+    CALL mvn -B -ntp -DskipTests -DexcludeReactor=true dependency:list
+    GOTO error
+  )
+
 
 CALL :log_action "checking GPG signing"
 ECHO test | gpg --clearsign >nul 2>&1 || (ECHO ERROR: GPG signing failed & GOTO error)
