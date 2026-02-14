@@ -5,8 +5,10 @@
 setlocal enabledelayedexpansion
 
 set "DRY=0"
+set "VERBOSE=0"
 FOR %%A IN (%*) DO (
   IF /I "%%~A"=="--dry" SET "DRY=1"
+  IF /I "%%~A"=="--verbose" SET "VERBOSE=1"
 )
 
 :: TODO check maven instance
@@ -16,13 +18,18 @@ FOR %%A IN (%*) DO (
 :: FEATURE update dependency version at README
 :: FEATURE mvn javadoc:javadoc
 
+ECHO dry run: %DRY%
+ECHO verbose: %VERBOSE%
+
 ECHO HINT: you need to manually set the JavaDoc inception version of all members
 ECHO HINT: remember to set the corret version, e.g. convert to minor version, if code has patch version set
 PAUSE
 
 :: + + + + + check GIT status + + + + +
+CALL :log_action "checking remote state (git fetch)"
 git fetch origin || GOTO error
 
+CALL :log_action "checking current branch"
 FOR /f %%i IN ('git rev-parse --abbrev-ref HEAD') DO SET BRANCH=%%i
 
 IF NOT "!BRANCH!"=="main" (
@@ -30,6 +37,7 @@ IF NOT "!BRANCH!"=="main" (
   GOTO error
 )
 
+CALL :log_action "checking local vs origin/main commit"
 FOR /f %%i IN ('git rev-parse HEAD') DO SET LOCAL=%%i
 FOR /f %%i IN ('git rev-parse origin/main') DO SET REMOTE=%%i
 
@@ -40,13 +48,17 @@ IF NOT "%LOCAL%"=="%REMOTE%" (
   GOTO error
 )
 
+CALL :log_action "checking for unstaged changes"
 git diff --quiet || (ECHO ERROR: unstaged changes & GOTO error)
+CALL :log_action "checking for staged but uncommitted changes"
 git diff --cached --quiet || (ECHO ERROR: staged but uncommitted changes & GOTO error)
+CALL :log_action "checking for rebase/merge/cherry-pick in progress"
 IF EXIST ".git\REBASE_HEAD" (ECHO ERROR: rebase in progress & GOTO error)
 IF EXIST ".git\MERGE_HEAD"  (ECHO ERROR: merge in progress & GOTO error)
 IF EXIST ".git\CHERRY_PICK_HEAD" (ECHO ERROR: cherry-pick in progress & GOTO error)
 :: - - - - - - check GIT status - - - - -
 :: + + + + + check GIT remote + + + + +
+CALL :log_action "reading git remote origin URL"
 FOR /f "delims=" %%u IN ('git remote get-url origin') DO SET "ORIGIN_URL=%%u"
 ECHO INFO: origin = %ORIGIN_URL%
 
@@ -63,6 +75,7 @@ IF NOT DEFINED ORIGIN_OK (
 )
 :: - - - - check GIT remote - - - - -
 
+CALL :log_action "checking GPG signing"
 ECHO test | gpg --clearsign >nul 2>&1 || (ECHO ERROR: GPG signing failed & GOTO error)
 
 IF "%DRY%"=="1" (
@@ -70,18 +83,29 @@ IF "%DRY%"=="1" (
   GOTO end
 )
 
+CALL :log_action "running mvn release:prepare"
 ECHO release:prepare ...
 CALL mvn -Prelease -B release:prepare || GOTO maven_error
 
+CALL :log_action "running mvn release:perform"
 ECHO release:perform ...
 CALL mvn -Prelease -B release:perform || GOTO maven_error
 
 ECHO push?
 PAUSE
 
+CALL :log_action "pushing tags and main"
 git push origin main --tags || GOTO error
 
 GOTO end
+
+:log_action
+set "LOG_MSG=%~1"
+IF "%VERBOSE%"=="1" (
+  ECHO -^> !LOG_MSG!
+)
+set "LOG_MSG="
+EXIT /B 0
 
 :maven_error
 ECHO ERROR: Maven release failed.
