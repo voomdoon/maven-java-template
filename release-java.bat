@@ -4,9 +4,6 @@ setlocal enabledelayedexpansion
 
 :: TODO check maven instance
 
-:: XXX preparation:
-:: git config --local core.sshCommand "ssh -i C:/Users/andrschulz/.ssh/voomdoon/id_voomdoon_2022-03-27 -o IdentitiesOnly=yes"
-
 ECHO !!! you need to manually set the JavaDoc incption version of all members
 ECHO !!! remember to set the corret version, e.g. convert to minor version, if code has patch version set
 PAUSE
