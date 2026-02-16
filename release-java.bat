@@ -11,6 +11,7 @@ FOR %%A IN (%*) DO (
   IF /I "%%~A"=="--verbose" SET "VERBOSE=1"
 )
 
+:: TODO GH release
 :: TODO check maven instance
 :: FEATURE update JavaDoc inception versions
 :: FEATURE pin (Sonars) status badges values in README.md
