@@ -2,6 +2,8 @@
 :: input:
 ::   - path to target module where to apply the template
 
+:: TODO as for pull
+
 @ECHO OFF
 SETLOCAL EnableExtensions EnableDelayedExpansion
 
