@@ -4,11 +4,14 @@ updates:
     directory: "/"
     schedule:
       interval: "daily"
+    rebase-strategy: "auto"
   - package-ecosystem: "github-actions"
     directory: "/template/.github/workflows"
     schedule:
       interval: "daily"
+    rebase-strategy: "auto"
   - package-ecosystem: "github-actions"
     directory: "/template-raw/.github/workflows"
     schedule:
       interval: "daily"
+    rebase-strategy: "auto"
