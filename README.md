@@ -4,13 +4,15 @@
 ## Prerequisites on the target GitHub repository
 
 - set action repository secret `SONAR_TOKEN`
-- set Dependabot secret `DEPENDABOT_AUTOMERGE_PAT`
+- have `DEPENDABOT_AUTOMERGE_PAT`
 	- Fine-grained personal access token
 		- Administration: RO
 		- Contents: R+W
 		- Metadata: RO
 		- Pull requests: R+W
 		- Workflows: R+W
+- set Dependabot secret `DEPENDABOT_AUTOMERGE_PAT`
+- set repository secret `DEPENDABOT_AUTOMERGE_PAT`
 - add branch classic protection rule for `main`
 	- Require a pull request before merging
 		- check all
@@ -20,6 +22,7 @@
 	- Require linear history
 	- Require status checks to pass before merging
 		- add `verify` and `CodeQL`
+			- might become visible after the first run
 - enable `Allow auto-merge`
 
 
