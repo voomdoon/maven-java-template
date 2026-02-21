@@ -1,3 +1,4 @@
+- sonar for maven-java-template
 - codeql
 - dependabot-automerge
 	- enable auto merge for all versions
