@@ -19,6 +19,9 @@ FOR %%A IN (%*) DO (
 :: FEATURE update dependency version at README
 :: FEATURE mvn javadoc:javadoc
 
+ECHO HINT: make sue you are using the correct SSH identity
+PAUSE
+
 ECHO HINT: you need to manually set the JavaDoc inception version of all members
 ECHO HINT: remember to set the corret version, e.g. convert to minor version, if code has patch version set
 PAUSE
@@ -122,9 +125,9 @@ EXIT /B 0
 :maven_error
 ECHO ERROR: Maven release failed.
 ECHO You may want to run:
-mvn -Prelease release:rollback
-git fetch origin
-git reset --hard origin/main
+ECHO mvn -Prelease release:rollback
+ECHO git fetch origin
+ECHO git reset --hard origin/main
 GOTO error
 
 :error
