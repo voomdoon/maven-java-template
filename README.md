@@ -11,6 +11,8 @@
 [![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=voomdoon_maven-java-template&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=voomdoon_maven-java-template)
 [![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=voomdoon_maven-java-template&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=voomdoon_maven-java-template)
 
+Template for all voomdoon Java Maven repositories.
+
 
 ## Prerequisites on the target GitHub repository
 
