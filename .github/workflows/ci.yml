@@ -8,14 +8,20 @@ on:
 
 permissions:
   contents: read
+  pull-requests: read
 
 jobs:
   verify:
     name: verify
     runs-on: ubuntu-latest
 
+    env:
+      SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 0
 
       - name: Lint GitHub Actions workflows (actionlint)
         uses: rhysd/actionlint@393031adb9afb225ee52ae2ccd7a5af5525e03e8 # v1.7.11
@@ -38,3 +44,24 @@ jobs:
             .github
             template
             template-raw
+
+      - name: Cache SonarCloud packages
+        if: ${{ env.SONAR_TOKEN }}
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v5.0.3
+        with:
+          path: ~/.sonar/cache
+          key: ${{ runner.os }}-sonar
+          restore-keys: ${{ runner.os }}-sonar
+
+      - name: SonarCloud analysis (only when token available)
+        if: ${{ env.SONAR_TOKEN }}
+        uses: SonarSource/sonarcloud-github-action@v3.1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ env.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.organization=voomdoon
+            -Dsonar.projectKey=voomdoon_maven-java-template
+            -Dsonar.sources=template,template-raw,.github
+            -Dsonar.exclusions=**/target/**,**/bin/**,**/.git/**
