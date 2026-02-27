@@ -87,7 +87,7 @@ CALL mvn -B -ntp -DskipTests -DexcludeReactor=true dependency:list ^
   )
 
 
-CALL :log_action "checking GPG signing"
+CALL :log_action "checking GPG signing and pinentry"
 ECHO test | gpg --clearsign >nul 2>&1 || (ECHO ERROR: GPG signing failed & GOTO error)
 
 IF "%DRY%"=="1" (
