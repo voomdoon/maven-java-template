@@ -124,9 +124,6 @@ IF NOT DEFINED ORIGIN_OK (
 :: - - - - - check GIT remote - - - - -
 :: - - - - - - - - - - check GIT - - - - - - - - - -
 
-CALL :log_action "preflight build"
-CALL mvn -B -ntp clean verify || GOTO error
-
 CALL :log_action "checking for external SNAPSHOT dependencies (excluding reactor)"
 CALL mvn -B -ntp -DskipTests -DexcludeReactor=true dependency:list ^
   | findstr /i ":SNAPSHOT" >nul && (
@@ -134,6 +131,9 @@ CALL mvn -B -ntp -DskipTests -DexcludeReactor=true dependency:list ^
     CALL mvn -B -ntp -DskipTests -DexcludeReactor=true dependency:list
     GOTO error
   )
+
+CALL :log_action "preflight build"
+CALL mvn -B -ntp clean verify || GOTO error
 
 CALL :log_action "checking GPG signing and pinentry"
 ECHO test | gpg --clearsign >nul 2>&1 || (ECHO ERROR: GPG signing failed & GOTO error)
