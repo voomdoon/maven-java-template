@@ -3,7 +3,6 @@
 [![CI](https://github.com/voomdoon/maven-java-template/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/voomdoon/maven-java-template/actions/workflows/ci.yml?query=branch%3Amain)
 [![License](https://img.shields.io/github/license/voomdoon/maven-java-template)](https://github.com/voomdoon/maven-java-template/blob/main/LICENSE)
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=voomdoon_maven-java-template&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=voomdoon_maven-java-template)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=voomdoon_maven-java-template&metric=coverage)](https://sonarcloud.io/summary/new_code?id=voomdoon_maven-java-template)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=voomdoon_maven-java-template&metric=bugs)](https://sonarcloud.io/summary/new_code?id=voomdoon_maven-java-template)
 [![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=voomdoon_maven-java-template&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=voomdoon_maven-java-template)
 [![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=voomdoon_maven-java-template&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=voomdoon_maven-java-template)
