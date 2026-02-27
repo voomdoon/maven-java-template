@@ -5,10 +5,10 @@
 setlocal enabledelayedexpansion
 
 set "DRY=0"
-set "VERBOSE=0"
+set "VERBOSE=1"
 FOR %%A IN (%*) DO (
   IF /I "%%~A"=="--dry" SET "DRY=1"
-  IF /I "%%~A"=="--verbose" SET "VERBOSE=1"
+  IF /I "%%~A"=="--quiet" SET "VERBOSE=0"
 )
 
 :: TODO GH release
