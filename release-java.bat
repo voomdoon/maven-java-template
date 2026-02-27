@@ -78,7 +78,54 @@ IF NOT DEFINED ORIGIN_OK (
 :: - - - - - check GIT remote - - - - -
 :: - - - - - - - - - - check GIT - - - - - - - - - -
 
+:: + + + + + check POM + + + + +
+CALL :log_action "checking pom.xml for scm section"
+IF NOT EXIST "pom.xml" (
+  ECHO ERROR: pom.xml not found in current directory
+  GOTO error
+)
+findstr /i /c:"<scm>" "pom.xml" >nul
+IF ERRORLEVEL 2 (
+  ECHO ERROR: failed to read pom.xml
+  GOTO error
+)
+IF ERRORLEVEL 1 (
+  ECHO ERROR: pom.xml does not contain an scm section
+  GOTO error
+)
+
+CALL :log_action "checking pom.xml for name/description/url"
+findstr /i /c:"<name>" "pom.xml" >nul
+IF ERRORLEVEL 2 (
+  ECHO ERROR: failed to read pom.xml
+  GOTO error
+)
+IF ERRORLEVEL 1 (
+  ECHO ERROR: pom.xml does not contain a name tag
+  GOTO error
+)
+findstr /i /c:"<description>" "pom.xml" >nul
+IF ERRORLEVEL 2 (
+  ECHO ERROR: failed to read pom.xml
+  GOTO error
+)
+IF ERRORLEVEL 1 (
+  ECHO ERROR: pom.xml does not contain a description tag
+  GOTO error
+)
+findstr /i /c:"<url>" "pom.xml" >nul
+IF ERRORLEVEL 2 (
+  ECHO ERROR: failed to read pom.xml
+  GOTO error
+)
+IF ERRORLEVEL 1 (
+  ECHO ERROR: pom.xml does not contain a url tag
+  GOTO error
+)
+:: - - - - - check POM - - - - -
+
 CALL :log_action "preflight build"
+PAUSE
 CALL mvn -B -ntp clean verify || GOTO error
 
 CALL :log_action "checking for external SNAPSHOT dependencies (excluding reactor)"
