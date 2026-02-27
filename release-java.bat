@@ -26,6 +26,52 @@ ECHO HINT: you need to manually set the JavaDoc inception version of all members
 ECHO HINT: remember to set the corret version, e.g. convert to minor version, if code has patch version set
 PAUSE
 
+:: + + + + + check POM + + + + +
+CALL :log_action "checking pom.xml for scm section"
+IF NOT EXIST "pom.xml" (
+  ECHO ERROR: pom.xml not found in current directory
+  GOTO error
+)
+findstr /i /c:"<scm>" "pom.xml" >nul
+IF ERRORLEVEL 2 (
+  ECHO ERROR: failed to read pom.xml
+  GOTO error
+)
+IF ERRORLEVEL 1 (
+  ECHO ERROR: pom.xml does not contain an scm section
+  GOTO error
+)
+
+CALL :log_action "checking pom.xml for name/description/url"
+findstr /i /c:"<name>" "pom.xml" >nul
+IF ERRORLEVEL 2 (
+  ECHO ERROR: failed to read pom.xml
+  GOTO error
+)
+IF ERRORLEVEL 1 (
+  ECHO ERROR: pom.xml does not contain a name tag
+  GOTO error
+)
+findstr /i /c:"<description>" "pom.xml" >nul
+IF ERRORLEVEL 2 (
+  ECHO ERROR: failed to read pom.xml
+  GOTO error
+)
+IF ERRORLEVEL 1 (
+  ECHO ERROR: pom.xml does not contain a description tag
+  GOTO error
+)
+findstr /i /c:"<url>" "pom.xml" >nul
+IF ERRORLEVEL 2 (
+  ECHO ERROR: failed to read pom.xml
+  GOTO error
+)
+IF ERRORLEVEL 1 (
+  ECHO ERROR: pom.xml does not contain a url tag
+  GOTO error
+)
+:: - - - - - check POM - - - - -
+
 :: + + + + + + + + + + check GIT + + + + + + + + + +
 :: + + + + + check GIT status + + + + +
 CALL :log_action "checking remote state (git fetch)"
@@ -78,54 +124,7 @@ IF NOT DEFINED ORIGIN_OK (
 :: - - - - - check GIT remote - - - - -
 :: - - - - - - - - - - check GIT - - - - - - - - - -
 
-:: + + + + + check POM + + + + +
-CALL :log_action "checking pom.xml for scm section"
-IF NOT EXIST "pom.xml" (
-  ECHO ERROR: pom.xml not found in current directory
-  GOTO error
-)
-findstr /i /c:"<scm>" "pom.xml" >nul
-IF ERRORLEVEL 2 (
-  ECHO ERROR: failed to read pom.xml
-  GOTO error
-)
-IF ERRORLEVEL 1 (
-  ECHO ERROR: pom.xml does not contain an scm section
-  GOTO error
-)
-
-CALL :log_action "checking pom.xml for name/description/url"
-findstr /i /c:"<name>" "pom.xml" >nul
-IF ERRORLEVEL 2 (
-  ECHO ERROR: failed to read pom.xml
-  GOTO error
-)
-IF ERRORLEVEL 1 (
-  ECHO ERROR: pom.xml does not contain a name tag
-  GOTO error
-)
-findstr /i /c:"<description>" "pom.xml" >nul
-IF ERRORLEVEL 2 (
-  ECHO ERROR: failed to read pom.xml
-  GOTO error
-)
-IF ERRORLEVEL 1 (
-  ECHO ERROR: pom.xml does not contain a description tag
-  GOTO error
-)
-findstr /i /c:"<url>" "pom.xml" >nul
-IF ERRORLEVEL 2 (
-  ECHO ERROR: failed to read pom.xml
-  GOTO error
-)
-IF ERRORLEVEL 1 (
-  ECHO ERROR: pom.xml does not contain a url tag
-  GOTO error
-)
-:: - - - - - check POM - - - - -
-
 CALL :log_action "preflight build"
-PAUSE
 CALL mvn -B -ntp clean verify || GOTO error
 
 CALL :log_action "checking for external SNAPSHOT dependencies (excluding reactor)"
@@ -135,7 +134,6 @@ CALL mvn -B -ntp -DskipTests -DexcludeReactor=true dependency:list ^
     CALL mvn -B -ntp -DskipTests -DexcludeReactor=true dependency:list
     GOTO error
   )
-
 
 CALL :log_action "checking GPG signing and pinentry"
 ECHO test | gpg --clearsign >nul 2>&1 || (ECHO ERROR: GPG signing failed & GOTO error)
