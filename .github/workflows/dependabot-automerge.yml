@@ -48,13 +48,13 @@ jobs:
           UPDATE_TYPE="${{ steps.meta.outputs.update-type }}"
           ECO="${{ steps.meta.outputs.package-ecosystem }}"
 
-          # allow: any patch
-          if [ "$UPDATE_TYPE" = "version-update:semver-patch" ]; then
+          # allow: any patch or minor
+          if [ "$UPDATE_TYPE" = "version-update:semver-patch" ] || [ "$UPDATE_TYPE" = "version-update:semver-minor" ]; then
             SHOULD="true"
           fi
 
-          # allow: github-actions minor (and patch already covered above)
-          if [ "$ECO" = "github_actions" ] && [ "$UPDATE_TYPE" = "version-update:semver-minor" ]; then
+          # allow: github-actions major
+          if [ "$ECO" = "github_actions" ] && [ "$UPDATE_TYPE" = "version-update:semver-major" ]; then
             SHOULD="true"
           fi
 
