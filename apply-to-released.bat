@@ -5,3 +5,5 @@ CALL apply.bat C:\workspaces\vd\public-logging\vd-logging
 CALL apply.bat C:\workspaces\vd\public-testing\vd-testing-file
 
 CALL apply.bat C:\workspaces\vd\public-util\vd-util-parent
+CALL apply.bat C:\workspaces\vd\public-util\vd-commons-util
+CALL apply.bat C:\workspaces\vd\public-util\vd-table-string-generator
