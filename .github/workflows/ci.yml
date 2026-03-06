@@ -13,7 +13,7 @@ permissions:
 jobs:
   verify:
     name: verify
-    runs-on: ubuntu-slim
+    runs-on: ubuntu-latest
 
     env:
       SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
