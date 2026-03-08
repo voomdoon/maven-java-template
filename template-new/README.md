@@ -1,0 +1,15 @@
+# TEMPLATE_NAME
+
+[![CI](https://github.com/voomdoon/TEMPLATE_NAME/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/voomdoon/TEMPLATE_NAME/actions/workflows/ci.yml?query=branch%3Amain)
+[![Trivy](https://github.com/voomdoon/TEMPLATE_NAME/actions/workflows/trivy.yml/badge.svg)](https://github.com/voomdoon/maven-java-template/actions/workflows/trivy.yml)
+[![CodeQL Advanced](https://github.com/voomdoon/TEMPLATE_NAME/actions/workflows/codeql.yml/badge.svg)](https://github.com/voomdoon/maven-java-template/actions/workflows/codeql.yml)
+[![License](https://img.shields.io/github/license/voomdoon/TEMPLATE_NAME)](https://github.com/voomdoon/TEMPLATE_NAME/blob/main/LICENSE)
+[![Java](https://img.shields.io/badge/Java-21-blue)](https://adoptium.net/)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=voomdoon_TEMPLATE_NAME&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=voomdoon_TEMPLATE_NAME)
+[![Bugs](https://sonarcloud.io/api/project_badges/measure?project=voomdoon_TEMPLATE_NAME&metric=bugs)](https://sonarcloud.io/summary/new_code?id=voomdoon_TEMPLATE_NAME)
+[![Vulnerabilities](https://sonarcloud.io/api/project_badges/measure?project=voomdoon_TEMPLATE_NAME&metric=vulnerabilities)](https://sonarcloud.io/summary/new_code?id=voomdoon_TEMPLATE_NAME)
+[![Security Rating](https://sonarcloud.io/api/project_badges/measure?project=voomdoon_TEMPLATE_NAME&metric=security_rating)](https://sonarcloud.io/summary/new_code?id=voomdoon_TEMPLATE_NAME)
+[![Code Smells](https://sonarcloud.io/api/project_badges/measure?project=voomdoon_TEMPLATE_NAME&metric=code_smells)](https://sonarcloud.io/summary/new_code?id=voomdoon_TEMPLATE_NAME)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=voomdoon_TEMPLATE_NAME&metric=sqale_rating)](https://sonarcloud.io/summary/new_code?id=voomdoon_TEMPLATE_NAME)
+[![Reliability Rating](https://sonarcloud.io/api/project_badges/measure?project=voomdoon_TEMPLATE_NAME&metric=reliability_rating)](https://sonarcloud.io/summary/new_code?id=voomdoon_TEMPLATE_NAME)
+[![Duplicated Lines (%)](https://sonarcloud.io/api/project_badges/measure?project=voomdoon_TEMPLATE_NAME&metric=duplicated_lines_density)](https://sonarcloud.io/summary/new_code?id=voomdoon_TEMPLATE_NAME)
