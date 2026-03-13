@@ -10,31 +10,32 @@ permissions:
   contents: read
   pull-requests: read
 
-concurrency:
-  group: retry-dependabot-automerge-${{ github.event.workflow_run.id }}
-  cancel-in-progress: false
-
 jobs:
   retry:
-    if: >
-      github.event.workflow_run.conclusion == 'failure' &&
-      github.event.workflow_run.run_attempt < 3
     runs-on: ubuntu-slim
 
     steps:
-      - name: Verify associated PR is authored by Dependabot
+      - name: Re-validate workflow run and associated PR
         id: verify
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          RUN_ID: ${{ github.event.workflow_run.id }}
+          EVENT_RUN_ID: ${{ github.event.workflow_run.id }}
+          EXPECTED_WORKFLOW_NAME: Dependabot auto-merge
         shell: bash
         run: |
           set -euo pipefail
 
-          run_json=$(gh api "/repos/$REPO/actions/runs/$RUN_ID")
+          run_json=$(gh api "/repos/$REPO/actions/runs/$EVENT_RUN_ID")
 
-          # Require exactly one associated PR
+          run_id=$(jq -r '.id' <<<"$run_json")
+          workflow_name=$(jq -r '.name // ""' <<<"$run_json")
+          event_name=$(jq -r '.event // ""' <<<"$run_json")
+          conclusion=$(jq -r '.conclusion // ""' <<<"$run_json")
+          run_attempt=$(jq -r '.run_attempt // 0' <<<"$run_json")
+          head_repo=$(jq -r '.head_repository.full_name // ""' <<<"$run_json")
+          actor_login=$(jq -r '.triggering_actor.login // .actor.login // ""' <<<"$run_json")
+
           pr_number=$(jq -r '
             if (.pull_requests | length) == 1
             then .pull_requests[0].number
@@ -42,28 +43,47 @@ jobs:
             end
           ' <<<"$run_json")
 
-          if [ -z "${pr_number:-}" ]; then
-            echo "trusted=false" >> "$GITHUB_OUTPUT"
-            exit 0
+          trusted=false
+          retryable=false
+
+          if [ -n "${pr_number:-}" ] &&
+             [ "$workflow_name" = "$EXPECTED_WORKFLOW_NAME" ] &&
+             { [ "$event_name" = "pull_request" ] || [ "$event_name" = "pull_request_target" ]; } &&
+             [ "$head_repo" = "$REPO" ] &&
+             [ "$actor_login" = "dependabot[bot]" ]; then
+            pr_json=$(gh api "/repos/$REPO/pulls/$pr_number")
+
+            pr_author=$(jq -r '.user.login // ""' <<<"$pr_json")
+            pr_head_repo=$(jq -r '.head.repo.full_name // ""' <<<"$pr_json")
+            pr_base_repo=$(jq -r '.base.repo.full_name // ""' <<<"$pr_json")
+            pr_state=$(jq -r '.state // ""' <<<"$pr_json")
+
+            if [ "$pr_author" = "dependabot[bot]" ] &&
+               [ "$pr_head_repo" = "$REPO" ] &&
+               [ "$pr_base_repo" = "$REPO" ] &&
+               [ "$pr_state" = "open" ]; then
+              trusted=true
+            fi
           fi
 
-          pr_json=$(gh api "/repos/$REPO/pulls/$pr_number")
-
-          author=$(jq -r '.user.login' <<<"$pr_json")
-          head_repo=$(jq -r '.head.repo.full_name' <<<"$pr_json")
-          base_repo=$(jq -r '.base.repo.full_name' <<<"$pr_json")
-          state=$(jq -r '.state' <<<"$pr_json")
-
-          if [ "$author" = "dependabot[bot]" ] &&
-             [ "$head_repo" = "$base_repo" ] &&
-             [ "$state" = "open" ]; then
-            echo "trusted=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "trusted=false" >> "$GITHUB_OUTPUT"
+          if [ "$trusted" = true ] &&
+             [ "$conclusion" = "failure" ] &&
+             [ "$run_attempt" -lt 3 ]; then
+            retryable=true
           fi
+
+          {
+            echo "trusted=$trusted"
+            echo "retryable=$retryable"
+            echo "run_id=$run_id"
+            echo "run_attempt=$run_attempt"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Delay on final retry
-        if: steps.verify.outputs.trusted == 'true' && github.event.workflow_run.run_attempt == 2
+        if: >
+          steps.verify.outputs.trusted == 'true' &&
+          steps.verify.outputs.retryable == 'true' &&
+          steps.verify.outputs.run_attempt == '2'
         shell: bash
         run: |
           delay=$((30 + RANDOM % 31))
@@ -71,11 +91,14 @@ jobs:
           sleep "$delay"
 
       - name: Re-run workflow
-        if: steps.verify.outputs.trusted == 'true'
+        if: >
+          steps.verify.outputs.trusted == 'true' &&
+          steps.verify.outputs.retryable == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
           REPO: ${{ github.repository }}
-          RUN_ID: ${{ github.event.workflow_run.id }}
+          RUN_ID: ${{ steps.verify.outputs.run_id }}
+        shell: bash
         run: |
           gh api \
             --method POST \
