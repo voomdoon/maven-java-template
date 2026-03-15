@@ -1,7 +1,7 @@
 name: Dependabot auto-merge
 
 on:
-  pull_request:
+  pull_request_target:
 
 concurrency:
   group: dependabot-automerge-${{ github.event.pull_request.number }}
@@ -23,17 +23,31 @@ jobs:
 
   approve:
     needs: check_setup
-    if: >
-      github.event.pull_request.user.login == 'dependabot[bot]' &&
-      github.event.pull_request.draft == false &&
-      github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-slim
     permissions:
+      contents: read
       pull-requests: write
     outputs:
       should_automerge: ${{ steps.policy.outputs.should_automerge }}
 
     steps:
+      - id: verify
+        name: Verify PR is from Dependabot
+        run: |
+          pr_json=$(gh api "/repos/${{ github.repository }}/pulls/${{ github.event.pull_request.number }}")
+
+          author=$(jq -r '.user.login' <<<"$pr_json")
+          draft=$(jq -r '.draft' <<<"$pr_json")
+          base_ref=$(jq -r '.base.ref' <<<"$pr_json")
+
+          if [ "$author" = "dependabot[bot]" ] && [ "$draft" = "false" ] && [ "$base_ref" = "main" ]; then
+            echo "verified=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "verified=false" >> "$GITHUB_OUTPUT"
+          fi
+        env:
+          GH_TOKEN: ${{ github.token }}
+
       - id: meta
         name: Fetch metadata
         uses: dependabot/fetch-metadata@21025c705c08248db411dc16f3619e6b5f9ea21a # v2.5.0
@@ -45,17 +59,20 @@ jobs:
         run: |
           SHOULD="false"
 
-          UPDATE_TYPE="${{ steps.meta.outputs.update-type }}"
-          ECO="${{ steps.meta.outputs.package-ecosystem }}"
+          # Only evaluate policy if PR is verified as from Dependabot
+          if [ "${{ steps.verify.outputs.verified }}" = "true" ]; then
+            UPDATE_TYPE="${{ steps.meta.outputs.update-type }}"
+            ECO="${{ steps.meta.outputs.package-ecosystem }}"
 
-          # allow: any patch or minor
-          if [ "$UPDATE_TYPE" = "version-update:semver-patch" ] || [ "$UPDATE_TYPE" = "version-update:semver-minor" ]; then
-            SHOULD="true"
-          fi
+            # allow: any patch or minor
+            if [ "$UPDATE_TYPE" = "version-update:semver-patch" ] || [ "$UPDATE_TYPE" = "version-update:semver-minor" ]; then
+              SHOULD="true"
+            fi
 
-          # allow: github-actions major
-          if [ "$ECO" = "github_actions" ] && [ "$UPDATE_TYPE" = "version-update:semver-major" ]; then
-            SHOULD="true"
+            # allow: github-actions major
+            if [ "$ECO" = "github_actions" ] && [ "$UPDATE_TYPE" = "version-update:semver-major" ]; then
+              SHOULD="true"
+            fi
           fi
 
           echo "should_automerge=$SHOULD" >> "$GITHUB_OUTPUT"
