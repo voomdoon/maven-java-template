@@ -10,6 +10,10 @@ permissions:
   contents: read
   pull-requests: read
 
+concurrency:
+  group: retry-dependabot-automerge-${{ github.event.workflow_run.id }}
+  cancel-in-progress: false
+
 jobs:
   retry:
     runs-on: ubuntu-slim
