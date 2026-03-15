@@ -23,8 +23,8 @@ jobs:
         id: verify
         env:
           GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
           EVENT_RUN_ID: ${{ github.event.workflow_run.id }}
+          REPO: ${{ github.event.workflow_run.repository.full_name }}
           EXPECTED_WORKFLOW_NAME: Dependabot auto-merge
         shell: bash
         run: |
@@ -100,7 +100,7 @@ jobs:
           steps.verify.outputs.retryable == 'true'
         env:
           GH_TOKEN: ${{ github.token }}
-          REPO: ${{ github.repository }}
+          REPO: ${{ github.event.workflow_run.repository.full_name }}
           RUN_ID: ${{ steps.verify.outputs.run_id }}
         shell: bash
         run: |
