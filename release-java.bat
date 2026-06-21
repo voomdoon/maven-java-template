@@ -19,11 +19,11 @@ FOR %%A IN (%*) DO (
 :: FEATURE update dependency version at README
 :: FEATURE mvn javadoc:javadoc
 
-ECHO HINT: make sue you are using the correct SSH identity
+ECHO HINT: make sure you are using the correct SSH identity
 PAUSE
 
 ECHO HINT: you need to manually set the JavaDoc inception version of all members
-ECHO HINT: remember to set the corret version, e.g. convert to minor version, if code has patch version set
+ECHO HINT: remember to set the correct version, e.g. convert to minor version, if code has patch version set
 PAUSE
 
 :: + + + + + check POM + + + + +
