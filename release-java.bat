@@ -16,7 +16,7 @@ FOR %%A IN (%*) DO (
 :: FEATURE update JavaDoc inception versions
 :: FEATURE pin (Sonars) status badges values in README.md
 :: FEATURE check TODOs
-:: FEATURE update dependency version at README
+:: TODO keep README dependency snippet versions in sync with pom.xml release version
 :: FEATURE mvn javadoc:javadoc
 
 ECHO HINT: make sure you are using the correct SSH identity
