@@ -17,7 +17,6 @@ FOR %%A IN (%*) DO (
 :: FEATURE pin (Sonars) status badges values in README.md
 :: FEATURE check TODOs
 :: TODO keep README dependency snippet versions in sync with pom.xml release version
-:: FEATURE mvn javadoc:javadoc
 
 ECHO HINT: make sure you are using the correct SSH identity
 PAUSE
@@ -134,6 +133,9 @@ CALL mvn -B -ntp -DskipTests -DexcludeReactor=true dependency:list ^
 
 CALL :log_action "preflight build"
 CALL mvn -B -ntp clean verify || GOTO error
+
+CALL :log_action "checking JavaDoc warnings"
+CALL mvn -B -ntp javadoc:javadoc "-Dmaven.javadoc.failOnWarnings=true" || GOTO error
 
 CALL :log_action "checking GPG signing and pinentry"
 ECHO test | gpg --clearsign >nul 2>&1 || (ECHO ERROR: GPG signing failed & GOTO error)
