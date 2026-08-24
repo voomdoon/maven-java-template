@@ -3,6 +3,8 @@ name: Dependabot update branches
 on:
   push:
     branches: [main]
+  pull_request_target:
+    types: [opened]
   workflow_dispatch:
 
 concurrency:
@@ -15,6 +17,9 @@ permissions:
 
 jobs:
   update:
+    if: >
+      github.event_name != 'pull_request_target' ||
+      github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-slim
     steps:
       - name: Update out-of-date Dependabot PRs
