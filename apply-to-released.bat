@@ -1,9 +1,11 @@
 CALL apply.bat C:\workspaces\vd\public-java\vd-parent
 
 CALL apply.bat C:\workspaces\vd\public-logging\vd-logging
+CALL apply.bat C:\workspaces\vd\public-logging\vd-log4j2-logging-connector
 
 CALL apply.bat C:\workspaces\vd\public-testing\vd-testing-file
 
 CALL apply.bat C:\workspaces\vd\public-util\vd-util-parent
+CALL apply.bat C:\workspaces\vd\public-util\vd-boolean-util
 CALL apply.bat C:\workspaces\vd\public-util\vd-commons-util
 CALL apply.bat C:\workspaces\vd\public-util\vd-table-string-generator
