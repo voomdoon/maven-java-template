@@ -11,9 +11,7 @@ concurrency:
   group: dependabot-update-branches
   cancel-in-progress: false
 
-permissions:
-  contents: write
-  pull-requests: write
+permissions: {}
 
 jobs:
   update:
@@ -22,47 +20,37 @@ jobs:
       github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-slim
     steps:
-      - name: Update out-of-date Dependabot PRs
-        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
-        with:
-          github-token: ${{ secrets.DEPENDABOT_AUTOMERGE_PAT }}
-          script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const base = "main";
+      - name: Ask Dependabot to rebase out-of-date PRs
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDABOT_AUTOMERGE_PAT }}
+        run: |
+          set -euo pipefail
 
-            // list open PRs into main
-            const prs = await github.paginate(github.rest.pulls.list, {
-              owner,
-              repo,
-              state: "open",
-              base,
-              per_page: 100,
-            });
+          base="main"
+          repo="${{ github.repository }}"
 
-            const dependabot = prs.filter(pr => pr.user?.login === "dependabot[bot]");
-            core.info(`Found ${dependabot.length} open Dependabot PR(s) targeting ${base}.`);
+          prs="$(gh pr list \
+            --repo "$repo" \
+            --state open \
+            --base "$base" \
+            --author "dependabot[bot]" \
+            --json number,headRefName,headRepositoryOwner,isCrossRepository \
+            --limit 100)"
 
-            for (const pr of dependabot) {
-              // Only try if GitHub thinks it's behind base.
-              // (This avoids noisy API calls.)
-              if (!pr.mergeable_state || pr.mergeable_state === "unknown") {
-                // mergeable_state can be stale; still okay to try update-branch later.
-                core.info(`PR #${pr.number}: mergeable_state=${pr.mergeable_state} (will attempt update)`);
-              }
+          count="$(echo "$prs" | jq 'length')"
+          echo "Found $count open Dependabot PR(s) targeting $base."
 
-              core.info(`Updating PR #${pr.number}: ${pr.title}`);
+          echo "$prs" | jq -c '.[]' | while read -r pr; do
+            number="$(echo "$pr" | jq -r '.number')"
+            branch="$(echo "$pr" | jq -r '.headRefName')"
+            owner="$(echo "$pr" | jq -r '.headRepositoryOwner.login')"
+            is_cross_repository="$(echo "$pr" | jq -r '.isCrossRepository')"
 
-              try {
-                // Equivalent to clicking "Update branch" in the UI
-                await github.request("PUT /repos/{owner}/{repo}/pulls/{pull_number}/update-branch", {
-                  owner,
-                  repo,
-                  pull_number: pr.number,
-                  expected_head_sha: pr.head.sha,
-                });
-                core.info(`✅ Update triggered for PR #${pr.number}`);
-              } catch (e) {
-                core.warning(`⚠️ Could not update PR #${pr.number}: ${e.status || ""} ${e.message}`);
-              }
-            }
+            if [ "$is_cross_repository" = "true" ]; then
+              echo "Skipping PR #$number from $owner/$branch because it is cross-repository."
+              continue
+            fi
+
+            echo "Requesting Dependabot rebase for PR #$number branch $branch."
+            gh pr comment "$number" --repo "$repo" --body "@dependabot rebase"
+          done
