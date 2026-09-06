@@ -83,9 +83,13 @@ FOR /F "delims=" %%R IN ('git rev-parse @{u}') DO SET REMOTE=%%R
 FOR /F "delims=" %%B IN ('git merge-base @ @{u}') DO SET BASE=%%B
 IF NOT "!LOCAL!" == "!REMOTE!" (
 	IF "!LOCAL!" == "!BASE!" (
-		ECHO !!! %MODULE_PATH% : local branch is behind remote ^(pull first^)
-		CD /D "%CURRENTDIR%"
-		EXIT /B 1
+		ECHO %MODULE_PATH% : local branch is behind remote; fast-forwarding
+		git pull --ff-only
+		IF ERRORLEVEL 1 (
+			ECHO !!! %MODULE_PATH% : fast-forward pull failed
+			CD /D "%CURRENTDIR%"
+			EXIT /B 1
+		)
 	) ELSE (
 		IF "!REMOTE!" == "!BASE!" (
 			ECHO !!! %MODULE_PATH% : local branch is ahead of remote ^(push first^)
