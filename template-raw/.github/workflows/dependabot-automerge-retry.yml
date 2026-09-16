@@ -49,6 +49,7 @@ jobs:
 
           trusted=false
           retryable=false
+          reconcile=false
 
           if [ -n "${pr_number:-}" ] &&
              [ "$workflow_name" = "$EXPECTED_WORKFLOW_NAME" ] &&
@@ -76,11 +77,17 @@ jobs:
             retryable=true
           fi
 
+          if [ "$trusted" = true ] && [ "$conclusion" = "success" ]; then
+            reconcile=true
+          fi
+
           {
             echo "trusted=$trusted"
             echo "retryable=$retryable"
+            echo "reconcile=$reconcile"
             echo "run_id=$run_id"
             echo "run_attempt=$run_attempt"
+            echo "pr_number=$pr_number"
           } >> "$GITHUB_OUTPUT"
 
       - name: Delay on final retry
@@ -108,3 +115,43 @@ jobs:
             --method POST \
             -H "Accept: application/vnd.github+json" \
             "/repos/$REPO/actions/runs/$RUN_ID/rerun"
+
+      - name: Delay before branch reconciliation
+        if: steps.verify.outputs.reconcile == 'true'
+        shell: bash
+        run: |
+          delay=$((30 + RANDOM % 31))
+          echo "Waiting ${delay}s before checking whether the PR is behind"
+          sleep "$delay"
+
+      - name: Rebase PR if it is still behind
+        if: steps.verify.outputs.reconcile == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.DEPENDABOT_AUTOMERGE_PAT }}
+          PR_NUMBER: ${{ steps.verify.outputs.pr_number }}
+          REPO: ${{ github.event.workflow_run.repository.full_name }}
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          pr_json=$(gh api "/repos/$REPO/pulls/$PR_NUMBER")
+          state=$(jq -r '.state // ""' <<<"$pr_json")
+          author=$(jq -r '.user.login // ""' <<<"$pr_json")
+          base_ref=$(jq -r '.base.ref // ""' <<<"$pr_json")
+          head_repo=$(jq -r '.head.repo.full_name // ""' <<<"$pr_json")
+          mergeable_state=$(jq -r '.mergeable_state // "unknown"' <<<"$pr_json")
+
+          if [ "$state" != "open" ] ||
+             [ "$author" != "dependabot[bot]" ] ||
+             [ "$base_ref" != "main" ] ||
+             [ "$head_repo" != "$REPO" ]; then
+            echo "PR #$PR_NUMBER is no longer an eligible open Dependabot PR."
+            exit 0
+          fi
+
+          if [ "$mergeable_state" = "behind" ]; then
+            echo "PR #$PR_NUMBER is still behind; requesting a Dependabot rebase."
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "@dependabot rebase"
+          else
+            echo "PR #$PR_NUMBER mergeable_state=$mergeable_state; no rebase needed."
+          fi
