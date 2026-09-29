@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request_target:
     types: [opened]
+  issue_comment:
+    types: [created]
   workflow_dispatch:
 
 concurrency:
@@ -16,11 +18,14 @@ permissions: {}
 jobs:
   update:
     if: >
-      github.event_name != 'pull_request_target' ||
-      github.event.pull_request.user.login == 'dependabot[bot]'
+      (github.event_name != 'pull_request_target' ||
+       github.event.pull_request.user.login == 'dependabot[bot]') &&
+      (github.event_name != 'issue_comment' ||
+       (github.event.issue.pull_request != null &&
+        github.event.comment.user.login == 'dependabot[bot]'))
     runs-on: ubuntu-slim
     steps:
-      - name: Ask Dependabot to rebase out-of-date PRs
+      - name: Reconcile out-of-date Dependabot PR branches
         env:
           GH_TOKEN: ${{ secrets.DEPENDABOT_AUTOMERGE_PAT }}
         run: |
@@ -34,7 +39,7 @@ jobs:
             --state open \
             --base "$base" \
             --author "dependabot[bot]" \
-            --json number,headRefName,headRepositoryOwner,isCrossRepository \
+            --json number,headRefName,headRefOid,headRepositoryOwner,isCrossRepository \
             --limit 100)"
 
           count="$(echo "$prs" | jq 'length')"
@@ -43,6 +48,7 @@ jobs:
           echo "$prs" | jq -c '.[]' | while read -r pr; do
             number="$(echo "$pr" | jq -r '.number')"
             branch="$(echo "$pr" | jq -r '.headRefName')"
+            head_sha="$(echo "$pr" | jq -r '.headRefOid')"
             owner="$(echo "$pr" | jq -r '.headRepositoryOwner.login')"
             is_cross_repository="$(echo "$pr" | jq -r '.isCrossRepository')"
 
@@ -51,6 +57,40 @@ jobs:
               continue
             fi
 
-            echo "Requesting Dependabot rebase for PR #$number branch $branch."
-            gh pr comment "$number" --repo "$repo" --body "@dependabot rebase"
+            # GitHub computes mergeable_state lazily; the first read after a push is often "unknown"
+            for attempt in 1 2 3 4 5; do
+              pr_json="$(gh api "/repos/$repo/pulls/$number")"
+              mergeable_state="$(echo "$pr_json" | jq -r '.mergeable_state // "unknown"')"
+              [ "$mergeable_state" != "unknown" ] && break
+              echo "PR #$number mergeable state is unknown (attempt: $attempt) => retrying"
+              sleep 3
+            done
+
+            if [ "$mergeable_state" != "behind" ]; then
+              echo "Skipping PR #$number branch $branch with mergeable state $mergeable_state."
+              continue
+            fi
+
+            # .base.sha is the base tip recorded at the PR's last head push, not the current tip
+            base_sha="$(gh api "/repos/$repo/commits/$base" --jq '.sha')"
+            marker="<!-- dependabot-rebase-v2-at-base:$base_sha -->"
+            comments="$(gh api --paginate "/repos/$repo/issues/$number/comments" \
+              --jq '.[] | select(.user.login == "voomdoon-bot") | .body')"
+
+            if grep -Fq "$marker" <<<"$comments"; then
+              echo "Rebase was already requested for PR #$number at base $base_sha; updating branch from head $head_sha."
+              gh api \
+                --method PUT \
+                -H "Accept: application/vnd.github+json" \
+                "/repos/$repo/pulls/$number/update-branch" \
+                -f expected_head_sha="$head_sha"
+            else
+              echo "Requesting Dependabot rebase for PR #$number branch $branch at base $base_sha."
+              gh pr comment "$number" \
+                --repo "$repo" \
+                --body "Tracking Dependabot rebase attempt for base \`${base_sha:0:12}\`.
+
+          $marker"
+              gh pr comment "$number" --repo "$repo" --body "@dependabot rebase"
+            fi
           done
